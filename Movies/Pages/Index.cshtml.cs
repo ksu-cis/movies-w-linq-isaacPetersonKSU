@@ -9,7 +9,7 @@ namespace Movies.Pages
 {
     public class IndexModel : PageModel
     {
-        public List<Movie> Movies;
+        public IEnumerable<Movie> Movies;
 
         [BindProperty]
         public string search { get; set; }
@@ -23,7 +23,8 @@ namespace Movies.Pages
         [BindProperty]
         public float? maxIMDB { get; set; }
 
-
+        [BindProperty]
+        public string order { get; set; }
 
         public void OnGet()
         {
@@ -36,20 +37,51 @@ namespace Movies.Pages
 
             if (search != null)
             {
-                Movies = MovieDatabase.Search(Movies, search);
+                Movies = Movies.Where(movie => movie.Title.Contains(search, StringComparison.OrdinalIgnoreCase));
+                //Movies = MovieDatabase.Search(Movies, search);
             }
 
-            if(mpaa.Count != 0)
+            if (mpaa.Count != 0)
             {
-                Movies = MovieDatabase.FilterByMPAA(Movies, mpaa);
+                Movies = Movies.Where(movie => mpaa.Contains(movie.MPAA_Rating));
+                //Movies = MovieDatabase.FilterByMPAA(Movies, mpaa);
             }
 
-            if(minIMDB != null)
+            if (minIMDB != null)
             {
-                Movies = MovieDatabase.FilterByMinIMDB(Movies, (float)minIMDB);
+                Movies = Movies.Where(movie => movie.IMDB_Rating != null && movie.IMDB_Rating >= minIMDB);
+                //Movies = MovieDatabase.FilterByMinIMDB(Movies, (float)minIMDB);
             }
 
-            
+            if (maxIMDB != null)
+            {
+                Movies = Movies.Where(movie => movie.IMDB_Rating != null && movie.IMDB_Rating <= maxIMDB);
+            }
+
+            if (order != null)
+            {
+                switch (order)
+                {
+                    case "title":
+                        Movies = Movies.OrderBy(movie => movie.Title);
+                        break;
+                    case "director":
+                        Movies = Movies.OrderBy(movie => movie.Director);
+                        break;
+                    case "old":
+                        Movies = Movies.OrderBy(movie => movie.Release_Year);
+                        break;
+                    case "new":
+                        Movies = Movies.OrderByDescending(movie => movie.Release_Year);
+                        break;
+                    case "imdb_high":
+                        Movies = Movies.OrderByDescending(movie => movie.IMDB_Rating);
+                        break;
+                    case "imdb_low":
+                        Movies = Movies.OrderBy(movie => movie.IMDB_Rating);
+                        break;
+                }
+            }
         }
     }
 }
